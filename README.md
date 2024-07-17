@@ -14,7 +14,7 @@ Libraries used: beauitfulsoup4, pandas, Flask
 
 # Authors
 
-Janice Thomas - @janicethomas121
+Janice Thomas - @janicethomas121 <br>
 Anish Saravanan - @AnishS04
 
 # Acknowledgments
