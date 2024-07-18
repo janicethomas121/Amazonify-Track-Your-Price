@@ -4,11 +4,11 @@
 from bs4 import BeautifulSoup
 import requests
 
-URL = "https://www.kbb.com/"
-page = requests.get(URL)
+url = "https://www.cargurus.com/"
 
+page = requests.get(url)
 soup = BeautifulSoup(page.content, "html.parser")
-
-results = soup.find(id="homeBestCars")
-print(results.prettify())
-
+results = soup.find(id="main")
+#print(results.prettify())
+element_names = results.find_all("div", class_="tab-content")
+print(element_names)
