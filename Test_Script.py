@@ -1,6 +1,3 @@
-from bs4 import BeautifulSoup
-import requests
-
 # Notes
 '''
 Base URL is the same for Amazon
