@@ -1,10 +1,10 @@
-# Find-Your-Car
+# Amazonify: Track Your Price
 
-A webscraper designed to help you find the best car!
+A webscraper designed to help you track prices for Amazon products
 
 # Dependecies
 
-Libraries used: beauitfulsoup4, pandas, Flask
+Libraries used: Selenium, Time, Schedule, smtplib
 
 # Installing
 

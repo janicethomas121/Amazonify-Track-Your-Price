@@ -1,5 +1,5 @@
-#First Test Script 
-#Testing 2
+from bs4 import BeautifulSoup
+import requests
 
 # Notes
 '''
