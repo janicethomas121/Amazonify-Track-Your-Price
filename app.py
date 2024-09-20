@@ -37,6 +37,7 @@ def track_price():
         actual_price, prod_title = scrape_amazon_price(url)
         
         if actual_price is not None:
+            send_confirmation_email(user_email, prod_title, price_wanted)
             if actual_price <= price_wanted:
                 send_notification(url, price_wanted, user_email, actual_price, prod_title)
             
@@ -68,9 +69,27 @@ def scrape_amazon_price(url):
         
     return price, title
 
+def send_confirmation_email(user_email, prod_title, price_wanted):
+    subject = "Amazon Price Tracking Subscription Confirmation"
+    body = f'Congrats! You have successfully subscribed to be notified when the following product "{prod_title}" reaches your desired price of ${price_wanted:.2f}.\n\nYou will receive an email once the price is met or dropped below your desired price.'
+
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = "amazonify.pricealert@gmail.com"
+    msg['To'] = user_email
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+
+    server.login("amazonify.pricealert@gmail.com", "lntu xgmj dwnl rnxh")
+
+    server.sendmail(msg['From'], [msg['To']], msg.as_string())
+
+    server.quit()
+
 def send_notification(url, price_wanted, user_email, actual_price, prod_title):
     subject = "Amazon Price Alert"
-    body = f'The product you enlisted for is: {prod_title}\n\nYour desired price for this item was ${price_wanted} and it has been reached with the current price of ${actual_price}\n\nWould you like to purchase this item now?\n\nFollow this link: {url}\n\nMail sent from Amazonify (DO NOT REPLY)'
+    body = f'The product you enlisted for is: {prod_title}\n\nYour desired price for this item was ${price_wanted:.2f} and it has been reached with the current price of ${actual_price}\n\nWould you like to purchase this item now?\n\nFollow this link: {url}\n\nMail sent from Amazonify (DO NOT REPLY)'
 
     msg = MIMEText(body)
     msg['Subject'] = subject

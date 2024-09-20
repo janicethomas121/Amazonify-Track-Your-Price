@@ -1,11 +1,4 @@
-# Notes
-'''
-Base URL is the same for Amazon
-Product ID can be extracted through user's inputted URL
-Schedule the track prices function (minutely, hourly, etc.) using the schedule library
-'''
-
-# imports (using selenium, time, and schedule)
+from flask import Flask, render_template, request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -15,8 +8,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from email.mime.text import MIMEText
 import smtplib
-import time
-import schedule
+import os
+import threading
+
+app = Flask(__name__)
 
 # Set up Chrome options
 chrome_options = Options()
@@ -31,21 +26,40 @@ chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 # Initialize the Chrome driver
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-# URL of the Amazon product (get from user input)
-# url = "https://www.amazon.com/Twister-Science-Tornadoes-Making-adventure/dp/0671000292/ref=m_crc_dp_lf_d_t1_d_sccl_2_6/132-6584591-3773905?pd_rd_w=GMp7i&content-id=amzn1.sym.a5144f00-3d78-40a4-aa84-7ff51eea31f7&pf_rd_p=a5144f00-3d78-40a4-aa84-7ff51eea31f7&pf_rd_r=G8CY67CAQ24F8HDQWAEE&pd_rd_wg=I2gnL&pd_rd_r=766d4ac2-db14-420f-ad2f-f8c65edf755b&pd_rd_i=0671000292&psc=1"
+# Global stop event
+stop_tracking = threading.Event()
 
-def get_input():
-    URL = input("Enter URL for the Amazon product you would like to track prices for: ")
-    price_input = float(input("Enter your desired price for this product: "))
-    email_input = input("Enter your Email Address: ")
-    #print(URL, '/n', price_input)
-    return URL, price_input, email_input
+@app.route("/", methods=["GET", "POST"])
+def track_price():
+    if request.method == "POST":
+        url = request.form["url"]
+        price_wanted = float(request.form["price_wanted"])
+        user_email = request.form["user_email"]
+        
+        # Start the tracking in a separate thread
+        tracking_thread = threading.Thread(target=track_price_thread, args=(url, price_wanted, user_email))
+        tracking_thread.start()
 
-# scraping product price
-# input: url
-# output: prints product title and price
+        return redirect(url_for('stop_tracking_page'))
+
+    return render_template("index.html")
+
+def track_price_thread(url, price_wanted, user_email):
+    while not stop_tracking.is_set():
+        actual_price, prod_title = scrape_amazon_price(url)
+        
+        if actual_price is not None:
+            if actual_price <= price_wanted:
+                send_notification(url, price_wanted, user_email, actual_price, prod_title)
+                stop_tracking.set()  # Stop tracking after sending the notification
+            
+            print(f'This is the actual price: {actual_price} and this is title: {prod_title}')
+        
+        # Check the price every hour
+        stop_tracking.wait(3600)
+
 def scrape_amazon_price(url):
-    price, title = None, None  # Initialize variables
+    price, title = None, None
     try:
         driver.get(url)
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'productTitle')))
@@ -53,8 +67,6 @@ def scrape_amazon_price(url):
         title = title_element.text.strip()
 
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(1) 
-        
         price_whole = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, 'a-price-whole'))
         ).text.strip()
@@ -68,13 +80,9 @@ def scrape_amazon_price(url):
         
     return price, title
 
-
-# scrape_amazon_price(url)
-
-
 def send_notification(url, price_wanted, user_email, actual_price, prod_title):
     subject = "Amazon Price Alert"
-    body = f'The product you enlisted for is {prod_title}\n\nYour desired price for this item was ${price_wanted} and it has been reached with the current price of ${actual_price}\n\nWould you like to purchase this item now?\n\nFollow this link: {url}\n\nMail sent from Amazonify (DO NOT REPLY)'
+    body = f'The product you enlisted for is: {prod_title}\n\nYour desired price for this item was ${price_wanted} and it has been reached with the current price of ${actual_price}\n\nWould you like to purchase this item now?\n\nFollow this link: {url}\n\nMail sent from Amazonify (DO NOT REPLY)'
 
     msg = MIMEText(body)
     msg['Subject'] = subject
@@ -90,26 +98,13 @@ def send_notification(url, price_wanted, user_email, actual_price, prod_title):
 
     server.quit()
 
-# send_notification()
+@app.route("/stop", methods=["GET", "POST"])
+def stop_tracking_page():
+    if request.method == "POST":
+        stop_tracking.set()
+        return render_template("stop.html", message="Tracking stopped.")
+    
+    return render_template("stop.html", message="Tracking is in progress. Click below to stop.")
 
-def track_price():
-    url, price_wanted, user_email = get_input()
-    actual_price, prod_title = scrape_amazon_price(url)
-    print(f'This is the actual price:{actual_price} and this is title:{prod_title}')
-    if actual_price <= price_wanted:
-        send_notification(url, price_wanted, user_email, actual_price, prod_title)
-    else:
-        # Optionally, you can log or update something here
-        pass
-
-
-# Schedule the task every hour
-# schedule.every().hour.do(track_price)
-
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
-
-track_price()
-
-
+if __name__ == "__main__":
+    app.run(debug=True)

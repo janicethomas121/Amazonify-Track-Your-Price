@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price Tracking Result</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #333333; /* Dark gray background */
+        text-align: center;
+        margin: 0;
+        padding: 0;
+        color: #ffffff; /* White font color */
+      }
+
+      h1 {
+        color: #ffffff; /* White for headers */
+        margin-top: 50px;
+      }
+
+      p {
+        color: #ffffff; /* White for paragraphs */
+        margin-bottom: 20px;
+      }
+
+      a {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #ff9900; /* Amazon orange */
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      a:hover {
+        background-color: #e68a00; /* Darker Amazon orange on hover */
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Price Tracking Result</h1>
+    <p>Product: {{ prod_title }}</p>
+    <p>Current Price: ${{ actual_price }}</p>
+    <p>
+      If the price is lower than your desired price, an email has been sent to
+      you! If not don't worry! We'll notify you when your desired price, or
+      lower, has been reached!
+    </p>
+    <a href="/">Track another product</a>
+  </body>
+</html>
